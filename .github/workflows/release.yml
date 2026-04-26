@@ -2,9 +2,9 @@ name: Release
 run-name: "${{ inputs.version && format('[Manual] Release {0}', inputs.version) || format('[Auto] Release {0}', github.ref_name) }}"
 
 on:
-  push:
-    tags:
-      - 'v*'
+  # push:
+  #   tags:
+  #     - 'v*'
   workflow_dispatch:
     inputs:
       version:

@@ -3,6 +3,7 @@ import { delay } from "@/utils/delay";
 import { forever } from "@/utils/forever";
 import { shutdownSignal } from "@/utils/shutdown";
 import { buildMachineActivityEphemeral, buildSessionActivityEphemeral, eventRouter } from "@/app/events/eventRouter";
+import { onSessionCompleted } from "@/app/notifications/notifier";
 
 export function startTimeout() {
     forever('session-timeout', async () => {
@@ -27,6 +28,11 @@ export function startTimeout() {
                 userId: session.accountId,
                 payload: buildSessionActivityEphemeral(session.id, false, updated[0].lastActiveAt.getTime(), false),
                 recipientFilter: { type: 'user-scoped-only' }
+            });
+            void onSessionCompleted({
+                userId: session.accountId,
+                sessionId: session.id,
+                completedAt: updated[0].lastActiveAt,
             });
         }
 

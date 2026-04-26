@@ -43,6 +43,10 @@ model Account {
   // Push notification badge counter
   badgeCount Int @default(0)
 
+  // Outbound notification config (Feishu webhook etc.) — JSON keeps the
+  // shape open for adding channels without further migrations.
+  notificationConfig Json?
+
   Session             Session[]
   OrchestratorRun     OrchestratorRun[]
   AccountPushToken    AccountPushToken[]

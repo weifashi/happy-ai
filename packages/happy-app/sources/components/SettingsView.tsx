@@ -236,6 +236,12 @@ export const SettingsView = React.memo(function SettingsView() {
                     loading={connectingGitHub || disconnectingGitHub}
                     showChevron={false}
                 />
+                <Item
+                    title={t('settings.feishuNotification')}
+                    subtitle={t('settings.feishuNotificationSubtitle')}
+                    icon={<Ionicons name="notifications-outline" size={29} color="#34C759" />}
+                    onPress={() => router.push('/settings/notifications-feishu')}
+                />
             </ItemGroup>
 
             {/* Social */}

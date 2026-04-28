@@ -2,12 +2,13 @@
  * happy-ai-cli mcp serve — stdio MCP server exposing happy session APIs.
  *
  * Reads credentials from `~/.happy-ai/` (whatever happy-cli already authenticated
- * with) and surfaces 5 tools:
+ * with) and surfaces 6 tools:
  *   - happy_session_list      (read)
  *   - happy_session_inspect   (read)
  *   - happy_session_messages  (read)
  *   - happy_session_send      (write)
  *   - happy_session_cancel    (write — requires happy-server with the abort HTTP wrapper)
+ *   - happy_session_spawn     (write — proxies daemon RPC `spawn-happy-session`)
  *
  * Runs as a stdio MCP server — register in your Claude/Codex config:
  *   { "mcpServers": { "happy": { "command": "happy-ai-cli", "args": ["mcp", "serve"] } } }
@@ -25,6 +26,7 @@ import { runSessionInspect, sessionInspectInputSchema } from './tools/sessionIns
 import { runSessionMessages, sessionMessagesInputSchema } from './tools/sessionMessages';
 import { runSessionSend, sessionSendInputSchema } from './tools/sessionSend';
 import { runSessionCancel, sessionCancelInputSchema } from './tools/sessionCancel';
+import { runSessionSpawn, sessionSpawnInputSchema } from './tools/sessionSpawn';
 
 function logStderr(...parts: unknown[]): void {
     process.stderr.write(`[happy-mcp] ${parts.map(String).join(' ')}\n`);
@@ -103,7 +105,16 @@ export async function runMcpServe(): Promise<void> {
         wrap('happy_session_cancel', credentials, runSessionCancel),
     );
 
+    server.tool(
+        'happy_session_spawn',
+        'Spawn a new agent session on a given machine. Returns the new sessionId. ' +
+            'Use happy_session_messages with the returned id to follow its first response. ' +
+            'Requires the machine to be online and dispatch-ready.',
+        sessionSpawnInputSchema,
+        wrap('happy_session_spawn', credentials, runSessionSpawn),
+    );
+
     const transport = new StdioServerTransport();
     await server.connect(transport);
-    logStderr('serving on stdio (5 tools registered: list / inspect / messages / send / cancel)');
+    logStderr('serving on stdio (6 tools registered: list / inspect / messages / send / cancel / spawn)');
 }

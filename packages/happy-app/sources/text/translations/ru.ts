@@ -594,6 +594,10 @@ export const ru: TranslationStructure = {
             failed: ({ error }: { error: string }) => `Не удалось создать worktree: ${error}`,
             success: 'Worktree успешно создан',
         },
+        branchMode: {
+            newBranch: 'Новая ветка',
+            existingBranch: 'Существующая ветка',
+        },
         repos: {
             addDirectory: 'Добавить каталог...',
             browseDirectory: 'Обзор...',

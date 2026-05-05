@@ -661,6 +661,10 @@ export const ja: TranslationStructure = {
             failed: ({ error }: { error: string }) => `ワークツリーの作成に失敗しました: ${error}`,
             success: 'ワークツリーが正常に作成されました',
         },
+        branchMode: {
+            newBranch: '新しいブランチ',
+            existingBranch: '既存のブランチ',
+        },
         repos: {
             addDirectory: 'ディレクトリを追加...',
             browseDirectory: '参照...',

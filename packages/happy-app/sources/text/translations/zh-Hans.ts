@@ -631,6 +631,10 @@ export const zhHans: TranslationStructure = {
             failed: ({ error }: { error: string }) => `创建 worktree 失败：${error}`,
             success: 'Worktree 创建成功',
         },
+        branchMode: {
+            newBranch: '新建分支',
+            existingBranch: '现有分支',
+        },
         repos: {
             addDirectory: '添加目录...',
             browseDirectory: '浏览...',

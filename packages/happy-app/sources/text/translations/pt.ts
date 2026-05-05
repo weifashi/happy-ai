@@ -629,6 +629,10 @@ export const pt: TranslationStructure = {
             failed: ({ error }: { error: string }) => `Falha ao criar worktree: ${error}`,
             success: 'Worktree criado com sucesso',
         },
+        branchMode: {
+            newBranch: 'Novo branch',
+            existingBranch: 'Branch existente',
+        },
         repos: {
             addDirectory: 'Adicionar diretório...',
             browseDirectory: 'Procurar...',

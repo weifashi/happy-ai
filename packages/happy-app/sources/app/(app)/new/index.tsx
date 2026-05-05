@@ -383,6 +383,7 @@ function NewSessionWizard() {
     }, [agentType]);
 
     const [sessionType, setSessionType] = React.useState<'simple' | 'worktree'>(persistedDraft?.sessionType || 'simple');
+    const [branchMode, setBranchMode] = React.useState<'new' | 'existing'>('new');
     const [selectedRepos, setSelectedRepos] = React.useState<SelectedRepo[]>([]);
     const [addDirBranchMenu, setAddDirBranchMenu] = React.useState<{ visible: boolean; items: ActionMenuItem[] }>({ visible: false, items: [] });
     const addDirBranchResolveRef = React.useRef<((value: string | undefined) => void) | null>(null);
@@ -1286,8 +1287,26 @@ function NewSessionWizard() {
 
             // Handle worktree creation
             if (sessionType === 'worktree') {
-                if (selectedRepos.length > 0) {
-                    // Multi-repo workspace creation
+                if (selectedRepos.length > 0 && branchMode === 'existing') {
+                    // Existing branch mode: checkout selected branches directly, no worktree
+                    const allRegisteredRepos = storage.getState().registeredRepos[selectedMachineId] || [];
+                    for (const sr of selectedRepos) {
+                        if (sr.targetBranch) {
+                            await machineBash(selectedMachineId, `git checkout ${sr.targetBranch}`, sr.repo.path);
+                        }
+                    }
+                    if (selectedRepos.length === 1) {
+                        const sr = selectedRepos[0];
+                        const repo = sr.repo;
+                        const registered = 'id' in repo ? allRegisteredRepos.find(rr => rr.id === repo.id) : undefined;
+                        const subdir = registered?.defaultWorkingDir;
+                        actualPath = subdir ? `${sr.repo.path}/${subdir}` : sr.repo.path;
+                        worktreeBranchName = sr.targetBranch;
+                    } else {
+                        actualPath = selectedRepos[0].repo.path;
+                    }
+                } else if (selectedRepos.length > 0) {
+                    // New branch mode: multi-repo workspace creation
                     const repoInputs: WorkspaceRepoInput[] = selectedRepos.map(sr => ({
                         repo: sr.repo,
                         targetBranch: sr.targetBranch,
@@ -2152,13 +2171,47 @@ function NewSessionWizard() {
                                 <View style={{ marginBottom: 12 }}>
                                     <SessionTypeSelector value={sessionType} onChange={setSessionType} />
                                     {sessionType === 'worktree' && selectedMachineId && (
-                                        <View style={{ marginTop: 8 }}>
+                                        <View style={{ marginTop: 8, gap: 8 }}>
                                             <RepoPickerBar
                                                 machineId={selectedMachineId}
                                                 selectedRepos={selectedRepos}
                                                 onReposChange={setSelectedRepos}
                                                 onAddDirectory={handleAddDirectory}
                                             />
+                                            {selectedRepos.length > 0 && (
+                                                <View style={{ flexDirection: 'row', borderRadius: 8, overflow: 'hidden', padding: 2, backgroundColor: theme.colors.surfaceHigh }}>
+                                                    {(['new', 'existing'] as const).map((mode) => {
+                                                        const isActive = branchMode === mode;
+                                                        return (
+                                                            <Pressable
+                                                                key={mode}
+                                                                onPress={() => setBranchMode(mode)}
+                                                                style={[{
+                                                                    flex: 1,
+                                                                    paddingVertical: 6,
+                                                                    alignItems: 'center',
+                                                                    borderRadius: 6,
+                                                                }, isActive && {
+                                                                    backgroundColor: theme.colors.surface,
+                                                                    shadowColor: '#000',
+                                                                    shadowOffset: { width: 0, height: 1 },
+                                                                    shadowOpacity: 0.1,
+                                                                    shadowRadius: 2,
+                                                                    elevation: 2,
+                                                                }]}
+                                                            >
+                                                                <Text style={{
+                                                                    fontSize: 13,
+                                                                    color: isActive ? theme.colors.text : theme.colors.textSecondary,
+                                                                    fontWeight: isActive ? '600' : '400',
+                                                                }}>
+                                                                    {t(`newSession.branchMode.${mode === 'new' ? 'newBranch' : 'existingBranch'}`)}
+                                                                </Text>
+                                                            </Pressable>
+                                                        );
+                                                    })}
+                                                </View>
+                                            )}
                                         </View>
                                     )}
                                 </View>

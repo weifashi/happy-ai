@@ -10,6 +10,7 @@
 import { Credentials } from '@/persistence';
 import { decodeBase64, decryptWithDataKey, decryptLegacy } from '@/api/encryption';
 import { decryptWithEphemeralKey } from '@/ui/auth';
+import { readCachedSessionKey } from '@/api/sessionKeyCache';
 
 interface DecryptedSessionRow {
     id: string;
@@ -48,19 +49,28 @@ interface RawSessionRow {
 function resolveSessionKey(
     credentials: Credentials,
     dataEncryptionKey: string | null,
+    sessionId?: string,
 ): { key: Uint8Array; variant: 'legacy' | 'dataKey' } | null {
     if (credentials.encryption.type === 'legacy') {
         return { key: credentials.encryption.secret, variant: 'legacy' };
     }
 
-    // dataKey path: the blob is `version(1) || libsodiumBox(rawKey, recipient=machinePub)`.
+    // Try local key cache first (daemon persists session AES keys here).
+    if (sessionId) {
+        const cached = readCachedSessionKey(sessionId, credentials.encryption.machineKey);
+        if (cached) {
+            return { key: cached, variant: 'dataKey' };
+        }
+    }
+
+    // Fallback: try ephemeral-key decrypt on the server blob.
     if (!dataEncryptionKey) {
         return null;
     }
 
     const blob = decodeBase64(dataEncryptionKey);
     if (blob.length < 1 || blob[0] !== 0) {
-        return null; // Unknown version
+        return null;
     }
 
     const opened = decryptWithEphemeralKey(blob.slice(1), credentials.encryption.machineKey);
@@ -75,7 +85,7 @@ export function decryptSessionRow(
     credentials: Credentials,
     row: RawSessionRow,
 ): DecryptedSessionRow | null {
-    const resolved = resolveSessionKey(credentials, row.dataEncryptionKey);
+    const resolved = resolveSessionKey(credentials, row.dataEncryptionKey, row.id);
     if (!resolved) {
         return null;
     }

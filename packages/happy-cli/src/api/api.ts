@@ -5,6 +5,7 @@ import { ApiSessionClient } from './apiSession';
 import { ApiMachineClient } from './apiMachine';
 import { decodeBase64, encodeBase64, getRandomBytes, encrypt, decrypt, libsodiumEncryptForPublicKey } from './encryption';
 import { PushNotificationClient } from './pushNotifications';
+import { cacheSessionKey } from './sessionKeyCache';
 import { configuration } from '@/configuration';
 import chalk from 'chalk';
 import { Credentials } from '@/persistence';
@@ -86,6 +87,11 @@ export class ApiClient {
         encryptionKey: encryptionKey,
         encryptionVariant: encryptionVariant
       }
+
+      if (this.credential.encryption.type === 'dataKey') {
+        cacheSessionKey(raw.id, encryptionKey, this.credential.encryption.machineKey).catch(() => {});
+      }
+
       return session;
     } catch (error) {
       logger.debug('[API] [ERROR] Failed to get or create session:', error);
